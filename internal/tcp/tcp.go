@@ -6,7 +6,7 @@ import (
 )
 
 // Packet is a struct holding all the information needed to create a TCP
-// packet.
+// (level-4) packet.
 type Packet struct {
 	ipLayer  *layers.IPv4
 	tcpLayer *layers.TCP

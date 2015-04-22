@@ -27,7 +27,7 @@ func TestPacket(t *testing.T) {
 	packet := gopacket.NewPacket(tcpBytes, layers.LayerTypeTCP, gopacket.Default)
 	if tcpPacketLayer := packet.Layer(layers.LayerTypeTCP); tcpPacketLayer != nil {
 		tcp, _ := tcpPacketLayer.(*layers.TCP)
-		if tcp.SrcPort != layers.TCPPort(8080) && tcp.DstPort != layers.TCPPort(80) {
+		if tcp.SrcPort != layers.TCPPort(8080) || tcp.DstPort != layers.TCPPort(80) {
 			t.Fatalf("Was expecting SrcPort 8080 and DstPort 80, got %d and %d", tcp.SrcPort, tcp.DstPort)
 		}
 	} else {
