@@ -5,6 +5,23 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
+// TCPState defines the state a TCP connection has.
+type TCPState uint8
+
+const (
+	_                           = iota
+	TCP_STATE_SYN_SENT TCPState = iota
+	TCP_STATE_SYN_RECEIVED
+	TCP_STATE_ESTABLISHED
+	TCP_STATE_FIN_WAIT_1
+	TCP_STATE_FIN_WAIT_2
+	TCP_STATE_CLOSE_WAIT
+	TCP_STATE_CLOSING
+	TCP_STATE_LAST_ACK
+	TCP_STATE_TIME_WAIT
+	TCP_STATE_CLOSED
+)
+
 // TCPPacket represents a TCP packet.
 type TCPPacket struct {
 	ip  *layers.IPv4
