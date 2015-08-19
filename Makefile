@@ -5,3 +5,6 @@ all: clean
 
 clean:
 	rm -rf bin
+
+test:
+	go test ./...
