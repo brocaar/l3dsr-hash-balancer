@@ -1,35 +1,39 @@
-# Level-3 Direct Server Return load balancer (hash based)
+# Level-3 Direct Server Return load balancer prototype
 
-**work in progress**
+**note this is proof-of-concept project, do not use this in production**
 
-This is a prototype for a L3-DSR hash based load balancer. It consists of
-two parts 1) the load balancer application, 2) the packet bridge (which should
-be installed on every server. An incoming requests is processed in the
-following steps:
+This is a prototype for a L3-DSR hash based load balancer. For a client I was
+researching if we could improve its CDN (for streaming content) by using
+a hash-based loadbalancer with the capability of using Level-3 based Direct
+Server Return (so that returning traffic is bypassing the loadbalancer).
 
-1. The client makes the TCP handshake with the load balancer application
-2. The client sends the HTTP GET request to the load balancer
-3. The load balancer chooses the server to route the traffic to (based on the
-   GET request hash).
-4. The load balancer sends the GET request to the packet bridge (with the
-   sequence number, and acknowledgment number from the TCP handshake with
-   the client). It will use the client IP as source and the load balancer
-   IP in the IPv4 DSCP field (1=a.b.c.d, 2=e.f.g.h.i).
-5. The packet bridge will setup a TCP handshake with the interface on which the
-   HTTP server is listening.
-6. After the packet bridge has a TCP connection with the HTTP server, it will
-   replay the GET request and send back the response directly to the client,
-   using the load balancer IP as a source.
+This codebase only implements a naive balancer application which:
 
+1. creates a handshake with the client
+2. inspects the first packet to determine which server to route the traffic to
+3. syncs the TCP handshake with the packetbridge application
+4. forwards all further TCP traffic to the packetbridge
 
-# Installation
+By using the DSCP field in the IPv4 header, the loadbalancer identifies itself
+to the packetbride.
 
-**TODO**
+The packetbridge application:
 
-Since the TCP connections are handled by the software without opening any
-ports, you need to make sure the system doesn't reset the connection.
+1. receives TCP packets from the balancer application
+2. creates (for new connections) a handshake with the backend (e.g. NGINX)
+3. modifies the incoming traffic so that it matches with the TCP handshake
+   of the backend
+4. modifies outgoing traffic so that it matches with the TCP handshake of
+   the client.
 
-To drop all `RST` packages run:
+The packetbride will use the loadbalancer IP address (it knows because of the
+DSCP field) for outgoing traffic, so that outgoing traffic bypasses the
+loadbalancer.
 
-* `iptables -A OUTPUT -m dscp ! --dscp 1 -s FRONTEND_IP -p tcp --tcp-flags RST RST -j DROP`
-* `iptables -A OUTPUT -s FRONTEND_IP -d BACKEND_IP -p tcp --tcp-flags RST RST -j DROP`
+## How to use
+
+The easiest way to play with this project is to setup a Vagrant environment.
+Running ``vagrant up`` will setup two boxes, one for the balancer, the other
+for the backend.
+
+TODO: add example commands.
