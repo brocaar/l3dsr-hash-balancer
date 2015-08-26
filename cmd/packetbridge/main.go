@@ -75,10 +75,10 @@ func run(c *cli.Context) {
 
 	log.Printf("Starting proxy %s -> %s", pbIP, backendIP)
 
-	go balancer.ForwardToBackend(tcpConn, backendTCPPackets, pbIP, backendIP)
-	go sendIP(handle, clientEthPackets)
-	go balancer.ListenTCP(tcpConn, pbIP, backendIP, layers.TCPPort(c.Int("packetbridge-port")), pbIface, backendTCPPackets, clientEthPackets, stateTable, balancers)
-	balancer.HandleIP(ps.Packets(), backendTCPPackets, stateTable)
+	go balancer.SendToBackend(tcpConn, backendTCPPackets, pbIP, backendIP)
+	go balancer.HandleBackendPackets(tcpConn, pbIP, backendIP, layers.TCPPort(c.Int("packetbridge-port")), pbIface, backendTCPPackets, clientEthPackets, stateTable, balancers)
+	go balancer.SendToClient(handle, clientEthPackets)
+	balancer.HandleBalancerPackets(ps.Packets(), backendTCPPackets, stateTable)
 }
 
 func main() {
@@ -133,16 +133,4 @@ func parseBalancers(s string) (map[uint8]net.IP, error) {
 	}
 
 	return out, nil
-}
-
-func sendIP(handle *pcap.Handle, ethPackets chan *balancer.EthPacket) {
-	for p := range ethPackets {
-		p.SetTOS(1)
-		log.Printf("Sending eth packet: %s", p)
-		bytes, err := p.MarshalBinary()
-		if err != nil {
-			log.Fatalf("Could not serialize packet: %s", err)
-		}
-		handle.WritePacketData(bytes)
-	}
 }

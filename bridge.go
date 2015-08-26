@@ -6,9 +6,10 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcap"
 )
 
-func HandleIP(packetsIn chan gopacket.Packet, backendPackets chan *TCPPacket, stateTable *PacketBridgeStateTable) {
+func HandleBalancerPackets(packetsIn chan gopacket.Packet, backendPackets chan *TCPPacket, stateTable *PacketBridgeStateTable) {
 	for p := range packetsIn {
 		// get layers
 		layer := p.Layer(layers.LayerTypeEthernet)
@@ -82,7 +83,7 @@ func HandleIP(packetsIn chan gopacket.Packet, backendPackets chan *TCPPacket, st
 	}
 }
 
-func ForwardToBackend(conn net.PacketConn, backendPackets chan *TCPPacket, srcIP, dstIP net.IP) {
+func SendToBackend(conn net.PacketConn, backendPackets chan *TCPPacket, srcIP, dstIP net.IP) {
 	for p := range backendPackets {
 		p.SetDstIP(dstIP)
 		p.SetSrcIP(srcIP)
@@ -100,7 +101,19 @@ func ForwardToBackend(conn net.PacketConn, backendPackets chan *TCPPacket, srcIP
 	}
 }
 
-func ListenTCP(conn net.PacketConn, dstIP, srcIP net.IP, srcPort layers.TCPPort, pbIface *net.Interface, backendTCPPackets chan *TCPPacket, ethPackets chan *EthPacket, stateTable *PacketBridgeStateTable, balancers map[uint8]net.IP) {
+func SendToClient(handle *pcap.Handle, ethPackets chan *EthPacket) {
+	for p := range ethPackets {
+		p.SetTOS(1)
+		log.Printf("Sending eth packet: %s", p)
+		bytes, err := p.MarshalBinary()
+		if err != nil {
+			log.Fatalf("Could not serialize packet: %s", err)
+		}
+		handle.WritePacketData(bytes)
+	}
+}
+
+func HandleBackendPackets(conn net.PacketConn, dstIP, srcIP net.IP, srcPort layers.TCPPort, pbIface *net.Interface, backendTCPPackets chan *TCPPacket, ethPackets chan *EthPacket, stateTable *PacketBridgeStateTable, balancers map[uint8]net.IP) {
 	b := make([]byte, 1500)
 	for {
 		n, srcAddr, err := conn.ReadFrom(b)
