@@ -9,6 +9,9 @@ import (
 	"github.com/google/gopacket/pcap"
 )
 
+// HandleBalancerPackets handles the incoming packets from the balancer
+// app. When the connection is known, it will forward it to the backend.
+// If not, it will first start a TCP handshake with the backend.
 func HandleBalancerPackets(packetsIn chan gopacket.Packet, backendPackets chan *TCPPacket, stateTable *PacketBridgeStateTable) {
 	for p := range packetsIn {
 		// get layers
@@ -83,6 +86,7 @@ func HandleBalancerPackets(packetsIn chan gopacket.Packet, backendPackets chan *
 	}
 }
 
+// SendToBackend sends packets from the packetbridge to the backend.
 func SendToBackend(conn net.PacketConn, backendPackets chan *TCPPacket, srcIP, dstIP net.IP) {
 	for p := range backendPackets {
 		p.SetDstIP(dstIP)
@@ -101,6 +105,8 @@ func SendToBackend(conn net.PacketConn, backendPackets chan *TCPPacket, srcIP, d
 	}
 }
 
+// SendToClient sends packets to the client who started the request at
+// the balancer.
 func SendToClient(handle *pcap.Handle, ethPackets chan *EthPacket) {
 	for p := range ethPackets {
 		p.SetTOS(1)
@@ -113,6 +119,8 @@ func SendToClient(handle *pcap.Handle, ethPackets chan *EthPacket) {
 	}
 }
 
+// HandleBackendPackets handles incoming packets from the backend. If the
+// connection is known, it will forward these packets to the client.
 func HandleBackendPackets(conn net.PacketConn, dstIP, srcIP net.IP, srcPort layers.TCPPort, pbIface *net.Interface, backendTCPPackets chan *TCPPacket, ethPackets chan *EthPacket, stateTable *PacketBridgeStateTable, balancers map[uint8]net.IP) {
 	b := make([]byte, 1500)
 	for {
