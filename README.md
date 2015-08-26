@@ -36,4 +36,50 @@ The easiest way to play with this project is to setup a Vagrant environment.
 Running ``vagrant up`` will setup two boxes, one for the balancer, the other
 for the backend.
 
-TODO: add example commands.
+Note that all cli argument have defaults that matches the Vagrant
+environment.
+
+### starting the balancer
+
+Run the following commands to start the balancer (within the Vagrant
+environment). 
+
+```
+vagrant ssh balancer
+cd src/github.com/brocaar/l3dsr-hash-balancer
+go get ./...
+make
+sudo ./bin/balancer
+```
+
+The balancer box has one interface ``192.168.33.10`` on which it listens for
+incoming requests.
+
+
+### starting the packetbridge / backend
+
+Run the following commands to start the packetbridge (within the Vagrant
+environment).
+
+```
+vagrant ssh backend
+cd src/github.com/brocaar/l3dsr-hash-balancer
+sudo ./bin/packetbridge
+```
+
+The backend box has two interfaces. On ``192.168.33.20`` it listens for incoming
+packets from the balancer. On ``192.168.33.30`` NGINX is running.
+
+### making requests
+
+Now that both applications are running, you can make a request to
+``http://192.168.33.10/``. This will:
+
+* Create a TCP handshake between you and the balancer (``.10``)
+* The balancer (``.10``) will sync your TCP handshake with the packetbridge
+  (``.20``)
+* The packetbridge (``.20``) will create a TCP handshake with the backend
+  (NGINX on ``.30``).
+* The packetbridge will start forwarding your packets to NGIXN (``.30``) and
+  the packets from NGINX to you (by using the ``.10`` source ip). Your HTTP
+  client will think that all packets came from the balancer :-)
