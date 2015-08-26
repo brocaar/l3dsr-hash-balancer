@@ -108,7 +108,7 @@ func BalancePackets(packetsIn chan gopacket.Packet, packetsOut chan *EthPacket, 
 				packetsOut <- NewEthPacket(ethLayer, ipLayer, tcpSYNCACK)
 			} else {
 				// this is not a new TCP handshake and the connection is unknown
-				log.Panicln("We should send a RST at this point!")
+				log.Println("We should send a RST at this point!")
 			}
 		}
 	}

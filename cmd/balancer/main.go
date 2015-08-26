@@ -95,7 +95,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "backend-ip",
-			Value: "192.168.34.20",
+			Value: "192.168.33.20",
 			Usage: "IP address of backend server",
 		},
 		cli.StringFlag{
