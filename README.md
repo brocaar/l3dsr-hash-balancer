@@ -1,10 +1,10 @@
-# Level-3 Direct Server Return load balancer prototype
+# Layer-3 Direct Server Return load balancer prototype
 
 **note this is proof-of-concept project, do not use this in production**
 
 This is a prototype for a L3-DSR hash based load balancer. For a client I was
 researching if we could improve its CDN (for streaming content) by using
-a hash-based loadbalancer with the capability of using Level-3 based Direct
+a hash-based loadbalancer with the capability of using Layer-3 based Direct
 Server Return (so that returning traffic is bypassing the loadbalancer).
 
 This codebase only implements a naive balancer application which:
